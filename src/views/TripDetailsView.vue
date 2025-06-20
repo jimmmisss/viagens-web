@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTripStore } from '../stores/trip.store';
 import { useAuthStore } from '../stores/auth.store';
-import { TripStatus } from '../types/trip';
 
 const route = useRoute();
 const router = useRouter();
@@ -26,12 +25,10 @@ const isRequester = computed(() =>
   trip.value?.requester_id === currentUserId.value
 );
 
-// Check if the trip can be canceled (only approved trips by the requester)
+// Check if the trip can be canceled (only by the requester)
 const canCancel = computed(() => 
   isRequester.value && 
-  trip.value?.status === 'aprovado' &&
-  // Check if start date is more than 7 days away
-  new Date(trip.value.start_date).getTime() - new Date().getTime() > 7 * 24 * 60 * 60 * 1000
+  trip.value?.status === 'aprovado'
 );
 
 // Check if the trip can be approved (only requested trips and not by the requester)
@@ -86,33 +83,26 @@ async function approveTrip() {
 }
 
 // Cancel trip
-async function cancelTrip() {
+async function cancelTrip(force: boolean = false) {
   if (!trip.value) return;
 
   // Validate cancellation permissions
-  if (trip.value.status === 'solicitado') {
-    // For requested trips, only the requester can cancel
-    if (!isRequester.value) {
-      error.value = 'Apenas o solicitante pode cancelar uma viagem com status "solicitado".';
-      confirmAction.value = null;
-      return;
-    }
-  } else if (trip.value.status === 'aprovado') {
-    // For approved trips, check if requester and if start date is more than 7 days away
-    if (isRequester.value) {
-      const startDate = new Date(trip.value.start_date).getTime();
-      const now = new Date().getTime();
-      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+  if (!isRequester.value) {
+    error.value = 'Apenas o solicitante pode cancelar sua própria viagem.';
+    confirmAction.value = null;
+    return;
+  }
 
-      if (startDate - now <= sevenDaysInMs) {
-        error.value = 'Viagens aprovadas só podem ser canceladas pelo solicitante se faltarem mais de 7 dias para o início.';
-        confirmAction.value = null;
-        return;
-      }
-    } else {
-      // Non-requesters can't cancel approved trips
-      error.value = 'Apenas o solicitante pode cancelar uma viagem aprovada.';
-      confirmAction.value = null;
+  // Check if the trip starts in 7 days or less
+  if (!force && trip.value.status === 'aprovado') {
+    const startDate = new Date(trip.value.start_date);
+    const today = new Date();
+    const diffTime = startDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 7) {
+      // Show a confirmation dialog for canceling a trip that starts in 7 days or less
+      confirmAction.value = 'force-cancel';
       return;
     }
   }
@@ -121,13 +111,40 @@ async function cancelTrip() {
     isLoading.value = true;
 
     if (trip.value.status === 'aprovado') {
-      await tripStore.cancelTrip(trip.value.id);
+      await tripStore.cancelTrip(trip.value.id, force);
     } else {
       await tripStore.updateTripStatus(trip.value.id, { status: 'cancelado' });
     }
 
     confirmAction.value = null;
-  } catch (err) {
+  } catch (err: any) {
+    // Check if the error is related to the 7-day restriction
+    if (err.response?.data?.error === 'cannot cancel a trip that starts in 7 days or less') {
+      // Show a confirmation dialog for canceling a trip that starts in 7 days or less
+      confirmAction.value = 'force-cancel';
+      return;
+    } else {
+      error.value = 'Falha ao cancelar viagem.';
+      console.error(err);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Force cancel trip (when within 7 days)
+async function forceCancelTrip() {
+  try {
+    isLoading.value = true;
+
+    if (trip.value?.status === 'aprovado') {
+      await tripStore.cancelTrip(trip.value.id, true);
+    } else {
+      await tripStore.updateTripStatus(trip.value.id, { status: 'cancelado' });
+    }
+
+    confirmAction.value = null;
+  } catch (err: any) {
     error.value = 'Falha ao cancelar viagem.';
     console.error(err);
   } finally {
@@ -233,6 +250,11 @@ function goBack() {
             Tem certeza que deseja cancelar esta viagem?
           </p>
 
+          <p v-else-if="confirmAction === 'force-cancel'" class="warning-text">
+            <strong>Atenção:</strong> Esta viagem começa em 7 dias ou menos. 
+            Tem certeza que deseja prosseguir com o cancelamento?
+          </p>
+
           <div class="confirmation-actions">
             <button @click="confirmAction = null" class="cancel-action-button">
               Não
@@ -252,6 +274,14 @@ function goBack() {
               class="confirm-action-button"
             >
               Sim, Cancelar
+            </button>
+
+            <button 
+              v-else-if="confirmAction === 'force-cancel'" 
+              @click="forceCancelTrip" 
+              class="confirm-action-button force-cancel-button"
+            >
+              Sim, Cancelar Mesmo Assim
             </button>
           </div>
         </div>
@@ -465,6 +495,23 @@ function goBack() {
 
 .confirm-action-button:hover {
   background-color: #1a2530;
+}
+
+.warning-text {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ffc107;
+}
+
+.force-cancel-button {
+  background-color: #dc3545;
+}
+
+.force-cancel-button:hover {
+  background-color: #bd2130;
 }
 
 @media (max-width: 768px) {

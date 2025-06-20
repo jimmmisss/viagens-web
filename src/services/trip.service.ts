@@ -47,10 +47,11 @@ export const tripService = {
   /**
    * Cancel an approved trip
    * @param id Trip ID
+   * @param force Optional parameter to force cancellation even if within 7 days
    * @returns Promise with the updated trip
    */
-  async cancelTrip(id: string): Promise<Trip> {
-    const response = await api.post<Trip>(`/trips/${id}/cancel`);
+  async cancelTrip(id: string, force: boolean = false): Promise<Trip> {
+    const response = await api.post<Trip>(`/trips/${id}/cancel`, { force });
     return response.data;
   }
 };

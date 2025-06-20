@@ -20,7 +20,7 @@ export const useTripStore = defineStore('trip', () => {
   async function fetchTrips(filters?: TripFilters) {
     loading.value = true;
     error.value = null;
-    
+
     try {
       trips.value = await tripService.getTrips(filters);
     } catch (err: any) {
@@ -34,7 +34,7 @@ export const useTripStore = defineStore('trip', () => {
   async function fetchTripById(id: string) {
     loading.value = true;
     error.value = null;
-    
+
     try {
       currentTrip.value = await tripService.getTripById(id);
       return currentTrip.value;
@@ -49,7 +49,7 @@ export const useTripStore = defineStore('trip', () => {
   async function createTrip(data: CreateTripRequest) {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const newTrip = await tripService.createTrip(data);
       trips.value.push(newTrip);
@@ -65,21 +65,21 @@ export const useTripStore = defineStore('trip', () => {
   async function updateTripStatus(id: string, data: UpdateTripStatusRequest) {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const updatedTrip = await tripService.updateTripStatus(id, data);
-      
+
       // Update in the trips array
       const index = trips.value.findIndex(trip => trip.id === id);
       if (index !== -1) {
         trips.value[index] = updatedTrip;
       }
-      
+
       // Update currentTrip if it's the same trip
       if (currentTrip.value?.id === id) {
         currentTrip.value = updatedTrip;
       }
-      
+
       return updatedTrip;
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Failed to update trip status';
@@ -89,24 +89,24 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  async function cancelTrip(id: string) {
+  async function cancelTrip(id: string, force: boolean = false) {
     loading.value = true;
     error.value = null;
-    
+
     try {
-      const updatedTrip = await tripService.cancelTrip(id);
-      
+      const updatedTrip = await tripService.cancelTrip(id, force);
+
       // Update in the trips array
       const index = trips.value.findIndex(trip => trip.id === id);
       if (index !== -1) {
         trips.value[index] = updatedTrip;
       }
-      
+
       // Update currentTrip if it's the same trip
       if (currentTrip.value?.id === id) {
         currentTrip.value = updatedTrip;
       }
-      
+
       return updatedTrip;
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Failed to cancel trip';
@@ -122,11 +122,11 @@ export const useTripStore = defineStore('trip', () => {
     currentTrip,
     loading,
     error,
-    
+
     // Getters
     allTrips,
     tripById,
-    
+
     // Actions
     fetchTrips,
     fetchTripById,
