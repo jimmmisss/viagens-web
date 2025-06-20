@@ -1,5 +1,5 @@
 import api from './api';
-import type {AuthResponse, LoginRequest, RegisterRequest} from "../types/user.ts";
+import type {AuthResponse, LoginRequest, RegisterRequest, User} from "../types/user.ts";
 
 
 export const authService = {
@@ -42,4 +42,12 @@ export const authService = {
     return !!localStorage.getItem('token');
   },
 
+  /**
+   * Get the current user information
+   * @returns Promise with the user information
+   */
+  async getCurrentUser(): Promise<User> {
+    const response = await api.get<User>('/me');
+    return response.data;
+  }
 };

@@ -44,10 +44,9 @@ function navigateToNewTrip() {
 <template>
   <div class="home-container">
     <section class="welcome-section">
-      <h1>Bem-vindo ao Sistema de Viagens</h1>
-      <p v-if="currentUser" class="welcome-message">
-        Olá, {{ currentUser.name }}! Gerencie suas solicitações de viagens de forma simples e rápida.
-      </p>
+      <br>
+      <br>
+      <br>
     </section>
 
     <section class="actions-section">

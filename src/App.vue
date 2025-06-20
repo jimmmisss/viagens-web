@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth.store';
 
@@ -13,6 +13,11 @@ function logout() {
   authStore.logout();
   router.push('/login');
 }
+
+// Initialize the auth store when the component is mounted
+onMounted(() => {
+  authStore.initializeStore();
+});
 
 </script>
 
@@ -29,7 +34,7 @@ function logout() {
           <router-link to="/trips">Minhas Viagens</router-link>
           <router-link to="/trips/new">Nova Viagem</router-link>
           <span class="user-info" v-if="currentUser">
-            Olá, {{ currentUser.name }}
+            <span class="user-icon">👤</span> Olá, {{ currentUser.name }}
           </span>
           <button @click="logout" class="logout-btn">Sair</button>
         </template>
@@ -80,6 +85,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .app-nav {
@@ -104,6 +115,23 @@ body {
 .user-info {
   margin-left: 1rem;
   font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.user-icon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  display: block;
+  margin-top: 0.2rem;
 }
 
 .logout-btn {
@@ -123,6 +151,7 @@ body {
 .app-content {
   flex: 1;
   padding: 2rem;
+  padding-top: 5rem; /* Added extra padding-top to account for fixed header */
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -134,5 +163,45 @@ body {
   text-align: center;
   padding: 1rem;
   margin-top: auto;
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .logo {
+    margin-bottom: 0.5rem;
+  }
+
+  .app-nav {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .user-info {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.7rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-email {
+    font-size: 0.7rem;
+  }
+
+  .logout-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .app-content {
+    padding: 1rem;
+    padding-top: 7rem; /* Increased to account for taller header on mobile */
+  }
 }
 </style>

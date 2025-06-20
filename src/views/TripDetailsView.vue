@@ -50,7 +50,7 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     await tripStore.fetchTripById(tripId);
-    
+
     if (!trip.value) {
       error.value = 'Viagem não encontrada.';
     }
@@ -65,7 +65,14 @@ onMounted(async () => {
 // Approve trip
 async function approveTrip() {
   if (!trip.value) return;
-  
+
+  // Check if current user is the requester
+  if (isRequester.value) {
+    error.value = 'Você não pode aprovar sua própria solicitação de viagem.';
+    confirmAction.value = null;
+    return;
+  }
+
   try {
     isLoading.value = true;
     await tripStore.updateTripStatus(trip.value.id, { status: 'aprovado' });
@@ -81,16 +88,44 @@ async function approveTrip() {
 // Cancel trip
 async function cancelTrip() {
   if (!trip.value) return;
-  
+
+  // Validate cancellation permissions
+  if (trip.value.status === 'solicitado') {
+    // For requested trips, only the requester can cancel
+    if (!isRequester.value) {
+      error.value = 'Apenas o solicitante pode cancelar uma viagem com status "solicitado".';
+      confirmAction.value = null;
+      return;
+    }
+  } else if (trip.value.status === 'aprovado') {
+    // For approved trips, check if requester and if start date is more than 7 days away
+    if (isRequester.value) {
+      const startDate = new Date(trip.value.start_date).getTime();
+      const now = new Date().getTime();
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+
+      if (startDate - now <= sevenDaysInMs) {
+        error.value = 'Viagens aprovadas só podem ser canceladas pelo solicitante se faltarem mais de 7 dias para o início.';
+        confirmAction.value = null;
+        return;
+      }
+    } else {
+      // Non-requesters can't cancel approved trips
+      error.value = 'Apenas o solicitante pode cancelar uma viagem aprovada.';
+      confirmAction.value = null;
+      return;
+    }
+  }
+
   try {
     isLoading.value = true;
-    
+
     if (trip.value.status === 'aprovado') {
       await tripStore.cancelTrip(trip.value.id);
     } else {
       await tripStore.updateTripStatus(trip.value.id, { status: 'cancelado' });
     }
-    
+
     confirmAction.value = null;
   } catch (err) {
     error.value = 'Falha ao cancelar viagem.';
@@ -111,17 +146,17 @@ function goBack() {
     <div v-if="isLoading" class="loading">
       Carregando detalhes da viagem...
     </div>
-    
+
     <div v-else-if="error" class="error-message">
       {{ error }}
       <button @click="goBack" class="back-button">Voltar para lista</button>
     </div>
-    
+
     <div v-else-if="!trip" class="not-found">
       <p>Viagem não encontrada.</p>
       <button @click="goBack" class="back-button">Voltar para lista</button>
     </div>
-    
+
     <div v-else class="trip-details-card">
       <div class="card-header">
         <h2>Detalhes da Viagem</h2>
@@ -129,13 +164,13 @@ function goBack() {
           {{ trip.status }}
         </span>
       </div>
-      
+
       <div class="trip-info">
         <div class="info-group">
           <h3>Destino</h3>
           <p>{{ trip.destination }}</p>
         </div>
-        
+
         <div class="info-group">
           <h3>Período</h3>
           <p>
@@ -143,7 +178,7 @@ function goBack() {
             <strong>Fim:</strong> {{ formatDate(trip.end_date) }}
           </p>
         </div>
-        
+
         <div class="info-group">
           <h3>Datas de Registro</h3>
           <p>
@@ -152,12 +187,12 @@ function goBack() {
           </p>
         </div>
       </div>
-      
+
       <div class="trip-actions">
         <button @click="goBack" class="back-button">
           Voltar
         </button>
-        
+
         <div v-if="canApprove || (isRequester && trip.status === 'solicitado')" class="action-buttons">
           <button 
             v-if="canApprove" 
@@ -166,7 +201,7 @@ function goBack() {
           >
             Aprovar Viagem
           </button>
-          
+
           <button 
             v-if="isRequester && trip.status === 'solicitado'" 
             @click="confirmAction = 'cancel'" 
@@ -175,7 +210,7 @@ function goBack() {
             Cancelar Solicitação
           </button>
         </div>
-        
+
         <button 
           v-if="canCancel" 
           @click="confirmAction = 'cancel'" 
@@ -184,25 +219,25 @@ function goBack() {
           Cancelar Viagem
         </button>
       </div>
-      
+
       <!-- Confirmation Dialog -->
       <div v-if="confirmAction" class="confirmation-dialog">
         <div class="confirmation-content">
           <h3>Confirmar Ação</h3>
-          
+
           <p v-if="confirmAction === 'approve'">
             Tem certeza que deseja aprovar esta viagem?
           </p>
-          
+
           <p v-else-if="confirmAction === 'cancel'">
             Tem certeza que deseja cancelar esta viagem?
           </p>
-          
+
           <div class="confirmation-actions">
             <button @click="confirmAction = null" class="cancel-action-button">
               Não
             </button>
-            
+
             <button 
               v-if="confirmAction === 'approve'" 
               @click="approveTrip" 
@@ -210,7 +245,7 @@ function goBack() {
             >
               Sim, Aprovar
             </button>
-            
+
             <button 
               v-else-if="confirmAction === 'cancel'" 
               @click="cancelTrip" 
@@ -437,22 +472,22 @@ function goBack() {
     margin: 0 1rem;
     padding: 1.5rem;
   }
-  
+
   .trip-info {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .trip-actions {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .action-buttons {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .back-button, .approve-button, .cancel-button {
     width: 100%;
   }
