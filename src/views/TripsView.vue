@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTripStore } from '../stores/trip.store';
-import { TripStatus } from '../types/trip';
+import type {TripStatus} from "../types/trip.ts";
 
 const router = useRouter();
 const tripStore = useTripStore();
@@ -18,13 +18,13 @@ const endDateFilter = ref('');
 
 // Computed filtered trips
 const filteredTrips = computed(() => {
-  let result = [...tripStore.allTrips];
-  
+  let result = tripStore.allTrips ? [...tripStore.allTrips] : [];
+
   // Apply status filter
   if (statusFilter.value) {
     result = result.filter(trip => trip.status === statusFilter.value);
   }
-  
+
   // Apply destination filter (case insensitive)
   if (destinationFilter.value) {
     const searchTerm = destinationFilter.value.toLowerCase();
@@ -32,7 +32,7 @@ const filteredTrips = computed(() => {
       trip.destination.toLowerCase().includes(searchTerm)
     );
   }
-  
+
   // Apply start date filter
   if (startDateFilter.value) {
     const filterDate = new Date(startDateFilter.value);
@@ -41,7 +41,7 @@ const filteredTrips = computed(() => {
       return tripDate >= filterDate;
     });
   }
-  
+
   // Apply end date filter
   if (endDateFilter.value) {
     const filterDate = new Date(endDateFilter.value);
@@ -50,7 +50,7 @@ const filteredTrips = computed(() => {
       return tripDate <= filterDate;
     });
   }
-  
+
   return result;
 });
 
@@ -67,10 +67,6 @@ onMounted(async () => {
   }
 });
 
-// Apply filters
-function applyFilters() {
-  // The filtering is reactive through the computed property
-}
 
 // Reset filters
 function resetFilters() {
@@ -102,7 +98,7 @@ function formatDate(dateString: string): string {
       <h1>Minhas Viagens</h1>
       <button @click="createNewTrip" class="new-trip-btn">Nova Viagem</button>
     </div>
-    
+
     <div class="filters-section">
       <h3>Filtros</h3>
       <div class="filters-form">
@@ -115,7 +111,7 @@ function formatDate(dateString: string): string {
             <option value="cancelado">Cancelado</option>
           </select>
         </div>
-        
+
         <div class="filter-group">
           <label for="destination">Destino</label>
           <input 
@@ -125,7 +121,7 @@ function formatDate(dateString: string): string {
             placeholder="Filtrar por destino"
           />
         </div>
-        
+
         <div class="filter-group">
           <label for="startDate">Data de Início (a partir de)</label>
           <input 
@@ -134,7 +130,7 @@ function formatDate(dateString: string): string {
             type="date"
           />
         </div>
-        
+
         <div class="filter-group">
           <label for="endDate">Data de Fim (até)</label>
           <input 
@@ -143,33 +139,33 @@ function formatDate(dateString: string): string {
             type="date"
           />
         </div>
-        
+
         <div class="filter-actions">
           <button @click="resetFilters" class="reset-btn">Limpar Filtros</button>
         </div>
       </div>
     </div>
-    
+
     <div v-if="isLoading" class="loading">
       Carregando viagens...
     </div>
-    
+
     <div v-else-if="error" class="error-message">
       {{ error }}
     </div>
-    
-    <div v-else-if="filteredTrips.length === 0" class="no-trips">
-      <p v-if="tripStore.allTrips.length === 0">
+
+    <div v-else-if="filteredTrips?.length === 0" class="no-trips">
+      <p v-if="tripStore.allTrips?.length === 0">
         Você ainda não tem viagens. Crie sua primeira solicitação de viagem!
       </p>
       <p v-else>
         Nenhuma viagem encontrada com os filtros selecionados.
       </p>
-      <button v-if="tripStore.allTrips.length === 0" @click="createNewTrip" class="create-trip-btn">
+      <button v-if="tripStore.allTrips?.length === 0" @click="createNewTrip" class="create-trip-btn">
         Nova Viagem
       </button>
     </div>
-    
+
     <div v-else class="trips-table-container">
       <table class="trips-table">
         <thead>
@@ -393,7 +389,7 @@ function formatDate(dateString: string): string {
   .filters-form {
     grid-template-columns: 1fr;
   }
-  
+
   .trips-table th,
   .trips-table td {
     padding: 0.75rem 0.5rem;

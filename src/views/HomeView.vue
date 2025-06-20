@@ -12,7 +12,7 @@ const isLoading = ref(false);
 const error = ref<string | null>(null);
 
 const currentUser = computed(() => authStore.currentUser);
-const recentTrips = computed(() => tripStore.allTrips.slice(0, 3)); // Get up to 3 recent trips
+const recentTrips = computed(() => tripStore.allTrips ? tripStore.allTrips.slice(0, 3) : []); // Get up to 3 recent trips
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
@@ -55,7 +55,7 @@ function navigateToNewTrip() {
         <h3>Minhas Viagens</h3>
         <p>Visualize e gerencie todas as suas solicitações de viagens.</p>
       </div>
-      
+
       <div class="action-card" @click="navigateToNewTrip">
         <h3>Nova Viagem</h3>
         <p>Crie uma nova solicitação de viagem.</p>
@@ -64,20 +64,20 @@ function navigateToNewTrip() {
 
     <section class="recent-trips-section">
       <h2>Viagens Recentes</h2>
-      
+
       <div v-if="isLoading" class="loading">
         Carregando viagens recentes...
       </div>
-      
+
       <div v-else-if="error" class="error-message">
         {{ error }}
       </div>
-      
+
       <div v-else-if="recentTrips.length === 0" class="no-trips">
         <p>Você ainda não tem viagens. Crie sua primeira solicitação de viagem!</p>
         <button @click="navigateToNewTrip" class="create-trip-btn">Nova Viagem</button>
       </div>
-      
+
       <div v-else class="trips-list">
         <div v-for="trip in recentTrips" :key="trip.id" class="trip-card">
           <div class="trip-header">
@@ -86,7 +86,7 @@ function navigateToNewTrip() {
               {{ trip.status }}
             </span>
           </div>
-          
+
           <div class="trip-dates">
             <div>
               <strong>Início:</strong> {{ new Date(trip.start_date).toLocaleDateString() }}
@@ -95,13 +95,13 @@ function navigateToNewTrip() {
               <strong>Fim:</strong> {{ new Date(trip.end_date).toLocaleDateString() }}
             </div>
           </div>
-          
+
           <router-link :to="`/trips/${trip.id}`" class="view-details-btn">
             Ver Detalhes
           </router-link>
         </div>
       </div>
-      
+
       <div v-if="recentTrips.length > 0" class="view-all">
         <router-link to="/trips" class="view-all-link">Ver todas as viagens</router-link>
       </div>
@@ -276,7 +276,7 @@ function navigateToNewTrip() {
   .actions-section {
     flex-direction: column;
   }
-  
+
   .trips-list {
     grid-template-columns: 1fr;
   }

@@ -50,24 +50,6 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
   }
 
-  async function fetchCurrentUser() {
-    if (!isAuthenticated.value) return;
-    
-    loading.value = true;
-    error.value = null;
-    
-    try {
-      user.value = await authService.getCurrentUser();
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Failed to fetch user';
-      if (err.response?.status === 401) {
-        logout();
-      }
-    } finally {
-      loading.value = false;
-    }
-  }
-
   return {
     // State
     user,
@@ -82,6 +64,5 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     login,
     logout,
-    fetchCurrentUser
   };
 });

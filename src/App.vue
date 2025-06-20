@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth.store';
 
@@ -14,16 +14,6 @@ function logout() {
   router.push('/login');
 }
 
-// Fetch current user data when the app loads if the user is authenticated
-onMounted(async () => {
-  if (isAuthenticated.value) {
-    try {
-      await authStore.fetchCurrentUser();
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-    }
-  }
-});
 </script>
 
 <template>

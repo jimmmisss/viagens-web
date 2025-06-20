@@ -26,7 +26,7 @@ async function handleSubmit() {
   // Validate dates
   const start = new Date(startDate.value);
   const end = new Date(endDate.value);
-  
+
   if (end <= start) {
     errorMessage.value = 'A data de fim deve ser posterior à data de início.';
     return;
@@ -34,15 +34,19 @@ async function handleSubmit() {
 
   try {
     isLoading.value = true;
-    
+
+    // Convert date strings to ISO format with time component
+    const formattedStartDate = new Date(startDate.value + 'T00:00:00Z').toISOString();
+    const formattedEndDate = new Date(endDate.value + 'T00:00:00Z').toISOString();
+
     const tripData: CreateTripRequest = {
       destination: destination.value,
-      start_date: startDate.value,
-      end_date: endDate.value
+      start_date: formattedStartDate,
+      end_date: formattedEndDate
     };
-    
+
     await tripStore.createTrip(tripData);
-    
+
     // Redirect to trips list after successful creation
     router.push('/trips');
   } catch (error) {
@@ -61,11 +65,11 @@ function cancel() {
   <div class="new-trip-container">
     <div class="new-trip-card">
       <h2>Nova Solicitação de Viagem</h2>
-      
+
       <div v-if="errorMessage" class="error-message">
         {{ errorMessage }}
       </div>
-      
+
       <form @submit.prevent="handleSubmit" class="new-trip-form">
         <div class="form-group">
           <label for="destination">Destino</label>
@@ -77,7 +81,7 @@ function cancel() {
             required
           />
         </div>
-        
+
         <div class="form-group">
           <label for="startDate">Data de Início</label>
           <input 
@@ -88,7 +92,7 @@ function cancel() {
             required
           />
         </div>
-        
+
         <div class="form-group">
           <label for="endDate">Data de Fim</label>
           <input 
@@ -99,7 +103,7 @@ function cancel() {
             required
           />
         </div>
-        
+
         <div class="form-actions">
           <button type="button" @click="cancel" class="cancel-button">
             Cancelar
@@ -213,12 +217,12 @@ input {
   .new-trip-card {
     margin: 0 1rem;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
     gap: 1rem;
   }
-  
+
   .cancel-button, .submit-button {
     width: 100%;
   }
